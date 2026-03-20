@@ -244,25 +244,28 @@ export default function HomePage() {
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-hidden md:flex md:flex-col md:ml-[328px]">
         {/* MOBILE TOP HEADER */}
-        <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between relative">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center">
+        <div className="md:hidden bg-white rounded-3xl border-0 shadow-lg mx-3 mt-3 px-4 py-3 flex items-center justify-between relative">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
               <Image
                 src="/logo.avif"
                 alt="VedaAI Logo"
-                width={40}
-                height={40}
+                width={32}
+                height={32}
                 priority
-                className="w-10 h-10 object-contain"
+                className="w-8 h-8 object-contain"
               />
             </div>
-            <h1 className="text-lg font-bold text-slate-900">VedaAI</h1>
+            <h1 className="text-base font-bold text-slate-900">VedaAI</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button className="p-2 hover:bg-slate-100 rounded-lg transition-all relative">
               <Bell className="w-5 h-5 text-slate-600" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-red-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+              AK
+            </div>
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 hover:bg-slate-100 rounded-lg transition-all"
@@ -277,8 +280,8 @@ export default function HomePage() {
 
           {/* DROPDOWN MENU */}
           {mobileMenuOpen && (
-            <div className="absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-lg z-50">
-              {bottomNavItems.map((item) => (
+            <div className="absolute top-14 left-3 right-3 bg-white z-50 overflow-hidden" style={{ borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+              {bottomNavItems.map((item, index) => (
                 <button
                   key={item.id}
                   onClick={() => {
@@ -286,7 +289,9 @@ export default function HomePage() {
                     setMobileMenuOpen(false);
                     setShowCreateForm(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 border-b border-slate-100 transition-all ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 transition-all ${
+                    index !== bottomNavItems.length - 1 ? 'border-b border-slate-100' : ''
+                  } ${
                     activeNav === item.id
                       ? 'bg-slate-50 text-black'
                       : 'text-slate-700 hover:bg-slate-50'

@@ -219,7 +219,7 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
   };
 
   return (
-    <div className="w-full h-full overflow-y-auto p-4 md:p-8" style={{ backgroundColor: '#d4d4d4' }}>
+    <div className="w-full h-full overflow-y-auto p-4 md:p-8" style={{ backgroundColor: '#dbdbdb' }}>
       {/* MAIN HEADER SECTION */}
       <div className="hidden md:block px-8 py-1">
         <div className="flex items-center gap-2 mb-2">
@@ -244,6 +244,7 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
       <div className="max-w-[1100px] mx-auto bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] overflow-hidden">
         {/* MOBILE HEADER */}
         <div className="md:hidden px-4 py-3 flex items-center gap-3 border-b border-slate-100">
+     
           <button onClick={onClose} className="text-slate-600 hover:text-slate-900">
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -316,35 +317,121 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
           </div>
 
           {/* QUESTION TYPES SECTION */}
-          <div className="rounded-3xl p-5" style={{ backgroundColor: '#ececec' }}>
-            <h2 className="text-lg font-semibold text-slate-900 mb-6">Question Types</h2>
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">Question Types</h2>
 
-            {/* HEADINGS */}
-            <div className="grid grid-cols-[1fr_40px_160px_140px] items-center mb-3 px-2">
-              <p className="text-sm font-medium text-slate-700">
-                Question Type
-              </p>
+            {/* MOBILE VIEW */}
+            <div className="md:hidden space-y-3">
+              {assignmentData.questions.map((question, index) => (
+                <div key={index} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                  {/* QUESTION TYPE DROPDOWN + DELETE */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <select
+                      value={question.type}
+                      onChange={(e) => updateQuestion(index, 'type', e.target.value)}
+                      className="flex-1 h-10 px-4 rounded-lg text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 bg-slate-50"
+                    >
+                      <option value="">Select Type</option>
+                      <option value="Multiple Choice Questions">Multiple Choice Questions</option>
+                      <option value="Short Questions">Short Questions</option>
+                      <option value="Diagram/Graph-Based Questions">Diagram/Graph-Based Questions</option>
+                      <option value="Numerical Problems">Numerical Problems</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => removeQuestion(index)}
+                      className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-600 transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
 
-              <div /> {/* empty for X column */}
+                  {/* COUNTERS SECTION */}
+                  <div className="space-y-3">
+                    {/* NO. OF QUESTIONS */}
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-slate-700">No. of Questions</p>
+                      <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => decrementQuestion(index, 'count')}
+                          className="text-slate-500 hover:text-slate-700 transition-colors"
+                        >
+                          −
+                        </button>
+                        <span className="font-medium text-slate-900 w-6 text-center">{question.count}</span>
+                        <button
+                          type="button"
+                          onClick={() => incrementQuestion(index, 'count')}
+                          className="text-slate-500 hover:text-slate-700 transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
 
-              <p className="text-sm font-medium text-slate-700 text-center">
-                No. of Questions
-              </p>
+                    {/* MARKS */}
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-slate-700">Marks</p>
+                      <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => decrementQuestion(index, 'marks')}
+                          className="text-slate-500 hover:text-slate-700 transition-colors"
+                        >
+                          −
+                        </button>
+                        <span className="font-medium text-slate-900 w-6 text-center">{question.marks}</span>
+                        <button
+                          type="button"
+                          onClick={() => incrementQuestion(index, 'marks')}
+                          className="text-slate-500 hover:text-slate-700 transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
 
-              <p className="text-sm font-medium text-slate-700 text-center">
-                Marks
-              </p>
+              {/* ADD QUESTION BUTTON */}
+              <button
+                type="button"
+                onClick={addQuestionType}
+                className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-white text-xl hover:bg-slate-800 transition-colors shadow-md"
+              >
+                +
+              </button>
+
+              {/* TOTAL SECTION */}
+              <div className="bg-white rounded-2xl p-2 border border-slate-100 shadow-sm text-right space-y-3" style={{ backgroundColor: '#f4f4f4' }}>
+                <p className="text-sm text-slate-600">
+                  Total Questions : <span className="font-semibold text-slate-900">{getTotalQuestions()}</span>
+                </p>
+                <p className="text-sm text-slate-600">
+                  Total Marks : <span className="font-semibold text-slate-900">{getTotalMarks()}</span>
+                </p>
+              </div>
             </div>
 
-            {/* ROWS */}
-           <div className="rounded-3xl p-5" style={{ backgroundColor: '#ececec' }}>
+            {/* DESKTOP VIEW (KEEP EXISTING) */}
+            <div className="hidden md:block rounded-3xl p-5" style={{ backgroundColor: '#ececec' }}>
+              {/* HEADINGS */}
+              <div className="grid grid-cols-[1fr_40px_160px_140px] items-center mb-3 px-2">
+                <p className="text-sm font-medium text-slate-700">Question Type</p>
+                <div />
+                <p className="text-sm font-medium text-slate-700 text-center">No. of Questions</p>
+                <p className="text-sm font-medium text-slate-700 text-center">Marks</p>
+              </div>
+
+              {/* ROWS */}
               {assignmentData.questions.map((question, index) => (
                 <div key={index} className="grid grid-cols-[1fr_40px_160px_140px] items-center gap-2 py-2.5">
-                  {/* QUESTION TYPE */}
                   <select
                     value={question.type}
                     onChange={(e) => updateQuestion(index, 'type', e.target.value)}
-                    className="h-10 px-4 rounded-full text-sm border-none focus:outline-none focus:ring-2 transition-all cursor-pointer appearance-none\n"
+                    className="h-10 px-4 rounded-full text-sm border-none focus:outline-none focus:ring-2 transition-all cursor-pointer appearance-none"
                     style={{ backgroundColor: '#FFFFFF', color: '#1F2937', border: '1px solid #E5E7EB' }}
                   >
                     <option value="">Select Type</option>
@@ -354,7 +441,6 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                     <option value="Numerical Problems">Numerical Problems</option>
                   </select>
 
-                  {/* REMOVE */}
                   <button
                     type="button"
                     onClick={() => removeQuestion(index)}
@@ -363,7 +449,6 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                     ×
                   </button>
 
-                  {/* NO. OF QUESTIONS */}
                   <div className="flex justify-center">
                     <div className="w-[120px] flex items-center justify-between px-3 py-1.5 rounded-full text-sm" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}>
                       <button
@@ -384,7 +469,6 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                     </div>
                   </div>
 
-                  {/* MARKS */}
                   <div className="flex justify-center">
                     <div className="w-[110px] flex items-center justify-between px-3 py-1.5 rounded-full text-sm" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}>
                       <button
@@ -406,26 +490,24 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                   </div>
                 </div>
               ))}
-            </div>
 
-            {/* ADD BUTTON */}
-            <div className="flex items-center gap-2 mt-3">
-              <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white text-lg cursor-pointer hover:bg-slate-800 transition-colors" onClick={addQuestionType}>
-                +
+              {/* ADD BUTTON */}
+              <div className="flex items-center gap-2 mt-3">
+                <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white text-lg cursor-pointer hover:bg-slate-800 transition-colors" onClick={addQuestionType}>
+                  +
+                </div>
+                <p className="text-sm font-medium text-slate-800">Add Question Type</p>
               </div>
-              <p className="text-sm font-medium text-slate-800">
-                Add Question Type
-              </p>
-            </div>
 
-            {/* TOTAL SECTION */}
-            <div className="mt-4 text-right space-y-0.5">
-              <p className="text-sm text-slate-600">
-                Total Questions : <span className="font-semibold text-slate-900">{getTotalQuestions()}</span>
-              </p>
-              <p className="text-sm text-slate-600">
-                Total Marks : <span className="font-semibold text-slate-900">{getTotalMarks()}</span>
-              </p>
+              {/* TOTAL SECTION */}
+              <div className="mt-4 text-right space-y-0.5">
+                <p className="text-sm text-slate-600">
+                  Total Questions : <span className="font-semibold text-slate-900">{getTotalQuestions()}</span>
+                </p>
+                <p className="text-sm text-slate-600">
+                  Total Marks : <span className="font-semibold text-slate-900">{getTotalMarks()}</span>
+                </p>
+              </div>
             </div>
           </div>
 
@@ -446,24 +528,44 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
         
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-6 md:px-12 py-6 flex justify-between items-center" style={{ backgroundColor: '#d4d4d4' }}>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2.5 rounded-full text-slate-900 font-medium hover:bg-slate-100 transition-colors"
-            style={{ backgroundColor: '#ffffff' }}
-          >
-            ← Previous
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="px-6 py-2.5 bg-slate-900 text-white rounded-full font-medium hover:bg-slate-800 transition-colors flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg"
-          >
-            {isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <>Next <ChevronRight className="w-4 h-4" /></>}
-          </button>
-        </div>
+      {/* MOBILE BUTTON SECTION */}
+      <div className="md:hidden px-4 py-6 flex gap-3 bg-transparent">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex-1 px-6 py-3 rounded-full text-slate-900 font-semibold hover:bg-slate-100 transition-colors bg-white border border-slate-200 shadow-sm"
+        >
+          ← Previous
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isLoading}
+          className="flex-1 px-6 py-3 bg-slate-900 text-white rounded-full font-semibold hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg"
+        >
+          {isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <>Next <ChevronRight className="w-4 h-4" /></>}
+        </button>
+      </div>
+
+      {/* DESKTOP BUTTON SECTION */}
+      <div className="hidden md:flex max-w-[1200px] mx-auto px-6 md:px-12 py-6 justify-between items-center" style={{ backgroundColor: '#dbdbdb' }}>
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-6 py-2.5 rounded-full text-slate-900 font-medium hover:bg-slate-100 transition-colors"
+          style={{ backgroundColor: '#ffffff' }}
+        >
+          ← Previous
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isLoading}
+          className="px-6 py-2.5 bg-slate-900 text-white rounded-full font-medium hover:bg-slate-800 transition-colors flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg"
+        >
+          {isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <>Next <ChevronRight className="w-4 h-4" /></>}
+        </button>
+      </div>
     </div>
   );
 }

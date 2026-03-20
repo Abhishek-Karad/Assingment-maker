@@ -80,15 +80,15 @@ export default function AssignmentsList({
     <div className="flex flex-col h-full" style={{ backgroundColor: '#dbdbdb' }}>
 
       {/* MOBILE HEADER */}
-      <div className="md:hidden px-4 py-4 bg-white border-b border-slate-200">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="md:hidden px-4 py-4 bg-white border-b border-slate-200" style={{ backgroundColor: '#dbdbdb' }}>
+        <div className="flex items-center mb-4">
           <button
             onClick={onBack}
             className="p-1.5 hover:bg-slate-100 rounded-lg transition"
           >
             <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
-          <h2 className="text-lg font-semibold text-slate-900">Assignments</h2>
+          <h2 className="flex-1 text-center text-lg font-semibold text-slate-900">Assignments</h2>
         </div>
       </div>
 
@@ -106,8 +106,8 @@ export default function AssignmentsList({
       </div>
 
       {/* MOBILE FILTER + SEARCH */}
-      <div className="md:hidden px-4 py-4 bg-white flex gap-2 mb-2">
-        <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition whitespace-nowrap flex-shrink-0">
+      <div className="md:hidden px-3 py-3 mx-3 mb-3 bg-white flex gap-2 rounded-2xl shadow-md">
+        <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition whitespace-nowrap flex-shrink-0">
           <Filter className="w-4 h-4" />
           Filter
         </button>
@@ -119,7 +119,7 @@ export default function AssignmentsList({
             placeholder="Search Name"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-full text-sm focus:outline-none"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm focus:outline-none"
           />
         </div>
       </div>
@@ -176,7 +176,7 @@ export default function AssignmentsList({
         {sortedAssignments.map((assignment) => (
           <div
             key={assignment.id}
-            className="bg-white rounded-xl px-6 py-6 mb-3 border border-slate-100 shadow-sm relative"
+            className="bg-white rounded-2xl px-6 py-6 mb-3 border border-slate-100 shadow-md relative"
             style={{
               marginBottom: '12px',
             }}
@@ -237,7 +237,7 @@ export default function AssignmentsList({
         {sortedAssignments.map((assignment) => (
           <div
             key={assignment.id}
-            className="bg-white rounded-xl px-8 py-6 border border-slate-100 shadow-sm hover:shadow-md transition-all relative flex flex-col justify-between"
+            className="bg-white rounded-2xl px-8 py-6 border border-slate-100 shadow-md hover:shadow-lg transition-all relative flex flex-col justify-between"
           >
             {/* HEADER */}
             <div className="flex justify-between items-start">
