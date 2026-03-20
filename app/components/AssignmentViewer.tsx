@@ -154,7 +154,7 @@ export default function AssignmentViewer({ assignmentId, onClose }: AssignmentVi
             <div className="flex flex-col items-center justify-center h-full">
               <FileText className="w-16 h-16 text-slate-300 mb-4" />
               <h3 className="text-xl font-semibold text-slate-600 mb-2">No Question Paper Generated</h3>
-              <p className="text-slate-500">The question paper hasn't been generated yet.</p>
+              <p className="text-slate-500">The question paper hasnt been generated yet.</p>
             </div>
           )}
         </div>
