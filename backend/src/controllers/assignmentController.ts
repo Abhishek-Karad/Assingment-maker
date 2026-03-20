@@ -5,6 +5,8 @@ import { queueQuestionGeneration, getJobStatus } from '../queue/questionGenerati
 import * as fs from 'fs';
 import * as path from 'path';
 import { generateAndUploadPDFToS3, deletePDFFromS3, generateSignedPdfUrl } from '../services/s3PdfGeneratorService';
+import { S3 } from 'aws-sdk';
+import s3 from '../config/s3';
 
 const isS3Enabled = (): boolean => process.env.USE_S3 === 'true';
 
@@ -438,14 +440,53 @@ export const downloadQuestionPDF = async (
     }
 
     const useS3 = isS3Enabled();
-    if (useS3) {
-      const safeName = assignment.assignmentName.replace(/[^a-zA-Z0-9-_]/g, '_');
-      const signedDownloadUrl = await generateSignedPdfUrl(assignment.pdfFilePath, {
-        expiresSeconds: 15 * 60,
-        downloadFileName: `questions_${safeName}.pdf`
-      });
+    const safeName = assignment.assignmentName.replace(/[^a-zA-Z0-9-_]/g, '_');
+    const downloadFileName = `questions_${safeName}.pdf`;
 
-      res.redirect(signedDownloadUrl);
+    if (useS3) {
+      // Proxy download from S3
+      try {
+        // Extract S3 key from the full URL
+        // Full URL format: https://bucket.s3.region.amazonaws.com/key
+        const urlParts = assignment.pdfFilePath.split('/');
+        const s3Key = urlParts.slice(3).join('/'); // Skip protocol, bucket, and empty parts
+
+        // Get object from S3
+        const getObjectParams: S3.GetObjectRequest = {
+          Bucket: process.env.AWS_S3_BUCKET_NAME || 'assignment-creator',
+          Key: s3Key
+        };
+
+        const data = await new Promise<S3.GetObjectOutput>((resolve, reject) => {
+          s3.getObject(getObjectParams, (err, data) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(data);
+            }
+          });
+        });
+
+        // Set response headers for PDF download
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Length', data.ContentLength || '');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="${downloadFileName}"`
+        );
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+        // Send the file body
+        res.send(data.Body);
+      } catch (s3Error) {
+        console.error('Error fetching from S3:', s3Error);
+        res.status(500).json({
+          success: false,
+          message: 'Error downloading PDF from S3',
+          error: s3Error instanceof Error ? s3Error.message : 'Unknown error'
+        });
+      }
     } else {
       // For local storage, stream the file
       const fileName = path.basename(assignment.pdfFilePath);
@@ -464,7 +505,7 @@ export const downloadQuestionPDF = async (
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader(
         'Content-Disposition',
-        `attachment; filename="questions_${assignment.assignmentName}.pdf"`
+        `attachment; filename="${downloadFileName}"`
       );
 
       // Stream the file

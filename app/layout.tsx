@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from 'next/font/google';
 import './globals.css';
 import ToasterProvider from './providers';
+import { NotificationProvider } from './context/NotificationContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,8 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.className}>
       <body className="font-sans antialiased" style={{ backgroundColor: '#dbdbdb' }}>
-        <ToasterProvider />
-        {children}
+        <NotificationProvider>
+          <ToasterProvider />
+          {children}
+        </NotificationProvider>
       </body>
     </html>
   );

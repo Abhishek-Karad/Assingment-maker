@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { toast } from 'sonner';
 import { CloudUpload, ArrowLeft, ChevronRight, Loader } from 'lucide-react';
+import { useNotifications } from '@/app/hooks/useNotifications';
 import { createAssignment as submitAssignmentToBackend } from '@/app/api/assignmentService';
 
 interface Question {
@@ -25,6 +25,7 @@ interface CreateAssignmentProps {
 }
 
 export default function CreateAssignment({ onClose, onSubmit }: CreateAssignmentProps) {
+  const { addNotification } = useNotifications();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [assignmentData, setAssignmentData] = useState<Assignment>({
@@ -46,17 +47,13 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
   const validateFile = (file: File): boolean => {
     // Check file type
     if (!ALLOWED_TYPES.includes(file.type)) {
-      toast.error('Invalid File Type', {
-        description: 'Only images (JPG, PNG, GIF, WebP) and PDFs are allowed.',
-      });
+      addNotification('error', 'Invalid File Type', 'Only images (JPG, PNG, GIF, WebP) and PDFs are allowed.');
       return false;
     }
 
     // Check file size
     if (file.size > MAX_FILE_SIZE) {
-      toast.error('File Too Large', {
-        description: `File size must be less than 20MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`,
-      });
+      addNotification('error', 'File Too Large', `File size must be less than 20MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`);
       return false;
     }
 
@@ -67,9 +64,7 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
     const file = event.target.files?.[0];
     if (file && validateFile(file)) {
       setAssignmentData({ ...assignmentData, file });
-      toast.success('File Uploaded', {
-        description: `${file.name} has been selected.`,
-      });
+      addNotification('success', 'File Uploaded', `${file.name} has been selected.`);
     }
   };
 
@@ -90,9 +85,7 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
       const file = files[0];
       if (validateFile(file)) {
         setAssignmentData({ ...assignmentData, file });
-        toast.success('File Uploaded', {
-          description: `${file.name} has been selected.`,
-        });
+        addNotification('success', 'File Uploaded', `${file.name} has been selected.`);
       }
     }
   };
@@ -134,31 +127,23 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
 
   const validateForm = (): boolean => {
     if (!assignmentData.assignmentName.trim()) {
-      toast.error('Validation Error', {
-        description: 'Please enter an assignment name.',
-      });
+      addNotification('error', 'Validation Error', 'Please enter an assignment name.');
       return false;
     }
 
     if (!assignmentData.dueDate) {
-      toast.error('Validation Error', {
-        description: 'Please select a due date.',
-      });
+      addNotification('error', 'Validation Error', 'Please select a due date.');
       return false;
     }
 
     if (assignmentData.questions.length === 0) {
-      toast.error('Validation Error', {
-        description: 'Please add at least one question type.',
-      });
+      addNotification('error', 'Validation Error', 'Please add at least one question type.');
       return false;
     }
 
     const allQuestionsHaveType = assignmentData.questions.every(q => q.type);
     if (!allQuestionsHaveType) {
-      toast.error('Validation Error', {
-        description: 'All questions must have a type selected.',
-      });
+      addNotification('error', 'Validation Error', 'All questions must have a type selected.');
       return false;
     }
 
@@ -190,9 +175,7 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
       const response = await submitAssignmentToBackend(formData);
 
       if (response.success) {
-        toast.success('Assignment Created Successfully!', {
-          description: `Assignment "${assignmentData.assignmentName}" has been saved to the database.`,
-        });
+        addNotification('success', 'Assignment Created Successfully!', `Assignment "${assignmentData.assignmentName}" has been saved to the database.`);
 
         // Call onSubmit callback with backend response data
         if (onSubmit) {
@@ -204,15 +187,11 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
 
         onClose();
       } else {
-        toast.error('Failed to Create Assignment', {
-          description: response.error || 'Something went wrong. Please try again.',
-        });
+        addNotification('error', 'Failed to Create Assignment', response.error || 'Something went wrong. Please try again.');
       }
     } catch (error) {
       console.error('Error submitting assignment:', error);
-      toast.error('Network Error', {
-        description: 'Failed to connect to the server. Please check your connection.',
-      });
+      addNotification('error', 'Network Error', 'Failed to connect to the server. Please check your connection.');
     } finally {
       setIsLoading(false);
     }

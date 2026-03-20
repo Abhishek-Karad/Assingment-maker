@@ -9,7 +9,6 @@ import {
   Zap,
   Book,
   Settings,
-  Bell,
   Menu,
   X,
   AlertCircle,
@@ -22,6 +21,7 @@ import {
 } from 'lucide-react';
 import CreateAssignment from './components/CreateAssignment';
 import AssignmentsList from './components/AssignmentsList';
+import NotificationDropdown from './components/NotificationDropdown';
 import { getAssignments, deleteAssignment as deleteFromBackend } from './api/assignmentService';
 
 interface Assignment {
@@ -259,10 +259,7 @@ export default function HomePage() {
             <h1 className="text-base font-bold text-slate-900">VedaAI</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-slate-100 rounded-lg transition-all relative">
-              <Bell className="w-5 h-5 text-slate-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            <NotificationDropdown />
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-red-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
               AK
             </div>
@@ -323,10 +320,7 @@ export default function HomePage() {
             </h2>
           </div>
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-slate-100 rounded-lg transition-all relative">
-              <Bell className="w-5 h-5 text-slate-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
+            <NotificationDropdown />
             <div className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-red-600 text-white flex items-center justify-center font-bold text-sm">
                 AK

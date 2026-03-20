@@ -8,6 +8,7 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import AssignmentViewer from './AssignmentViewer';
+import AssignmentPreview from './AssignmentPreview';
 
 interface Assignment {
   id: string;
@@ -312,7 +313,7 @@ export default function AssignmentsList({
 
       {/* VIEW MODAL */}
       {viewingAssignmentId && (
-        <AssignmentViewer
+        <AssignmentPreview
           assignmentId={viewingAssignmentId}
           onClose={() => setViewingAssignmentId(null)}
         />
