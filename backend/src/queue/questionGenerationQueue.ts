@@ -11,6 +11,21 @@ interface QuestionGenerationJobData {
   additionalContext?: string;
 }
 
+const getEnvNumber = (key: string, fallback: number): number => {
+  const value = process.env[key];
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    console.warn(`Invalid ${key} value "${value}". Using fallback ${fallback}.`);
+    return fallback;
+  }
+
+  return parsed;
+};
+
 /**
  * Get Redis connection URL
  */
@@ -77,16 +92,18 @@ export const queueQuestionGeneration = async (
   options?: Bull.JobOptions
 ): Promise<Bull.Job<QuestionGenerationJobData>> => {
   const queue = getQuestionQueue();
+  const timeoutMs = getEnvNumber('QUESTION_JOB_TIMEOUT_MS', 5 * 60 * 1000);
+  const backoffDelayMs = getEnvNumber('QUESTION_JOB_BACKOFF_DELAY_MS', 60 * 1000);
   
   const defaultOptions: Bull.JobOptions = {
     attempts: 5, // Increased from 3 to handle rate limits better
     backoff: {
       type: 'exponential',
-      delay: 60000 // 60 seconds delay (Gemini suggests 47+ seconds)
+      delay: backoffDelayMs
     },
     removeOnComplete: false,
     removeOnFail: false,
-    timeout: 60000, // 60 second timeout per attempt
+    timeout: timeoutMs,
     ...options
   };
 

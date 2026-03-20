@@ -13,15 +13,14 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleResolution": "bundler",
-    "typeRoots": ["./node_modules/@types", "./src/types"],
-    "ignoreDeprecations": "6.0"
+    "moduleResolution": "node",
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "ts-node": {
     "compilerOptions": {
       "skipLibCheck": true
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -4,9 +4,12 @@ import { Assignment, IAssignment } from '../models/Assignment';
 import { queueQuestionGeneration, getJobStatus } from '../queue/questionGenerationQueue';
 import * as fs from 'fs';
 import * as path from 'path';
+import { generateAndUploadPDFToS3, deletePDFFromS3, generateSignedPdfUrl } from '../services/s3PdfGeneratorService';
+
+const isS3Enabled = (): boolean => process.env.USE_S3 === 'true';
 
 interface CreateAssignmentRequest extends Request {
-  file?: Express.Multer.File;
+  file?: Express.Multer.File & { location?: string; bucket?: string };
 }
 
 export const createAssignment = async (
@@ -52,8 +55,17 @@ export const createAssignment = async (
     // Add file information if file was uploaded
     if (req.file) {
       assignmentData.fileName = req.file.originalname;
-      assignmentData.filePath = req.file.path;
-      assignmentData.fileUrl = `/uploads/${req.file.filename}`;
+      const useS3 = isS3Enabled();
+      
+      if (useS3 && req.file.location) {
+        // S3 Storage - use S3 URL directly
+        assignmentData.filePath = req.file.location;
+        assignmentData.fileUrl = req.file.location;
+      } else {
+        // Local Storage - use relative path
+        assignmentData.filePath = req.file.path;
+        assignmentData.fileUrl = `/uploads/${req.file.filename}`;
+      }
     }
 
     // Save to database
@@ -425,29 +437,40 @@ export const downloadQuestionPDF = async (
       return;
     }
 
-    // Construct full file path from relative path
-    const fileName = path.basename(assignment.pdfFilePath);
-    const filePath = path.join(__dirname, '../../uploads', fileName);
-
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      res.status(404).json({
-        success: false,
-        message: 'PDF file not found on server'
+    const useS3 = isS3Enabled();
+    if (useS3) {
+      const safeName = assignment.assignmentName.replace(/[^a-zA-Z0-9-_]/g, '_');
+      const signedDownloadUrl = await generateSignedPdfUrl(assignment.pdfFilePath, {
+        expiresSeconds: 15 * 60,
+        downloadFileName: `questions_${safeName}.pdf`
       });
-      return;
+
+      res.redirect(signedDownloadUrl);
+    } else {
+      // For local storage, stream the file
+      const fileName = path.basename(assignment.pdfFilePath);
+      const filePath = path.join(__dirname, '../../uploads', fileName);
+
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        res.status(404).json({
+          success: false,
+          message: 'PDF file not found on server'
+        });
+        return;
+      }
+
+      // Set response headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="questions_${assignment.assignmentName}.pdf"`
+      );
+
+      // Stream the file
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
     }
-
-    // Set response headers for PDF download
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="questions_${assignment.assignmentName}.pdf"`
-    );
-
-    // Stream the file
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
   } catch (error) {
     console.error('Error downloading PDF:', error);
     res.status(500).json({
@@ -486,10 +509,19 @@ export const getPDFPath = async (
       return;
     }
 
+    const useS3 = isS3Enabled();
+    let pdfPath = assignment.pdfFilePath;
+
+    if (useS3) {
+      pdfPath = await generateSignedPdfUrl(assignment.pdfFilePath, {
+        expiresSeconds: 15 * 60
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: {
-        pdfPath: assignment.pdfFilePath,
+        pdfPath,
         assignmentName: assignment.assignmentName
       }
     });

@@ -1,27 +1,11 @@
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import customS3Storage from '../config/customS3Storage';
+import { Request } from 'express';
 
-const uploadDir = process.env.UPLOAD_DIR || 'uploads';
+// Determine storage based on environment - read directly from process.env
+const useS3 = process.env.USE_S3 === 'true';
 
-// Create uploads directory if it doesn't exist
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext);
-    cb(null, `${name}-${uniqueSuffix}${ext}`);
-  }
-});
-
-const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
   
   if (allowedTypes.includes(file.mimetype)) {
@@ -33,8 +17,18 @@ const fileFilter = (req: Express.Request, file: Express.Multer.File, cb: multer.
 
 const maxFileSize = parseInt(process.env.MAX_FILE_SIZE || '20971520', 10);
 
+// FORCE S3 ONLY - NO LOCAL FALLBACK
+if (!useS3) {
+  throw new Error(
+    '❌ CRITICAL: S3 upload is required but USE_S3 is not enabled.\n' +
+    'Please set USE_S3=true in your .env file.\n' +
+    'For production, you MUST use AWS S3 for file uploads.'
+  );
+}
+
+// Use custom S3 storage with SDK v2
 const upload = multer({
-  storage,
+  storage: customS3Storage,
   fileFilter,
   limits: {
     fileSize: maxFileSize
@@ -42,3 +36,4 @@ const upload = multer({
 });
 
 export default upload;
+export { useS3 };

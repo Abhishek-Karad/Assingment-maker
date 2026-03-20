@@ -271,7 +271,10 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
               <p className="text-xs text-slate-500 mb-4">JPEG, PNG upto 20MB</p>
               <button
                 type="button"
-                onClick={handleBrowseClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBrowseClick();
+                }}
                 className="px-6 py-2 bg-slate-900 text-white rounded-full text-sm font-medium hover:bg-slate-800 transition-colors"
               >
                 Browse Files
@@ -321,15 +324,15 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Question Types</h2>
 
             {/* MOBILE VIEW */}
-            <div className="md:hidden space-y-3">
+            <div className="md:hidden space-y-4">
               {assignmentData.questions.map((question, index) => (
-                <div key={index} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                <div key={index} className="relative bg-white rounded-[20px] p-5 shadow-[0px_2px_8px_rgba(0,0,0,0.05)]">
                   {/* QUESTION TYPE DROPDOWN + DELETE */}
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center gap-2 mb-5">
                     <select
                       value={question.type}
                       onChange={(e) => updateQuestion(index, 'type', e.target.value)}
-                      className="flex-1 h-10 px-4 rounded-lg text-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-300 bg-slate-50"
+                      className="w-fit h-12 px-2 rounded-[16px] text-sm border-none focus:outline-none focus:ring-0 bg-white font-medium"
                     >
                       <option value="">Select Type</option>
                       <option value="Multiple Choice Questions">Multiple Choice Questions</option>
@@ -340,52 +343,53 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                     <button
                       type="button"
                       onClick={() => removeQuestion(index)}
-                      className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-600 transition-colors"
+                      className="absolute right-3 top-3 w-8 h-8 flex items-center justify-center text-[#9CA3AF] hover:text-red-600 transition-colors text-xl"
                     >
                       ×
                     </button>
                   </div>
 
-                  {/* COUNTERS SECTION */}
-                  <div className="space-y-3">
-                    {/* NO. OF QUESTIONS */}
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-slate-700">No. of Questions</p>
-                      <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
+                  {/* COUNTERS SECTION - HORIZONTAL LAYOUT */}
+                  <div className="bg-[#F3F4F6] rounded-[16px] p-4">
+                    <div className="grid grid-cols-2 gap-6 mb-4">
+                      <p className="text-sm font-medium text-[#6B7280]">No. of Questions</p>
+                      <p className="text-sm font-medium text-[#6B7280]">Marks</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* No. of Questions Stepper */}
+                      <div className="flex items-center justify-center gap-4 bg-white rounded-full px-3 py-2">
                         <button
                           type="button"
                           onClick={() => decrementQuestion(index, 'count')}
-                          className="text-slate-500 hover:text-slate-700 transition-colors"
+                          className="text-[#111827] hover:text-opacity-70 transition-colors text-lg font-semibold"
                         >
                           −
                         </button>
-                        <span className="font-medium text-slate-900 w-6 text-center">{question.count}</span>
+                        <span className="font-semibold text-[#111827] w-6 text-center">{question.count}</span>
                         <button
                           type="button"
                           onClick={() => incrementQuestion(index, 'count')}
-                          className="text-slate-500 hover:text-slate-700 transition-colors"
+                          className="text-[#111827] hover:text-opacity-70 transition-colors text-lg font-semibold"
                         >
                           +
                         </button>
                       </div>
-                    </div>
 
-                    {/* MARKS */}
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-slate-700">Marks</p>
-                      <div className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
+                      {/* Marks Stepper */}
+                      <div className="flex items-center justify-center gap-4 bg-white rounded-full px-3 py-2">
                         <button
                           type="button"
                           onClick={() => decrementQuestion(index, 'marks')}
-                          className="text-slate-500 hover:text-slate-700 transition-colors"
+                          className="text-[#111827] hover:text-opacity-70 transition-colors text-lg font-semibold"
                         >
                           −
                         </button>
-                        <span className="font-medium text-slate-900 w-6 text-center">{question.marks}</span>
+                        <span className="font-semibold text-[#111827] w-6 text-center">{question.marks}</span>
                         <button
                           type="button"
                           onClick={() => incrementQuestion(index, 'marks')}
-                          className="text-slate-500 hover:text-slate-700 transition-colors"
+                          className="text-[#111827] hover:text-opacity-70 transition-colors text-lg font-semibold"
                         >
                           +
                         </button>
@@ -396,21 +400,20 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
               ))}
 
               {/* ADD QUESTION BUTTON */}
-              <button
-                type="button"
-                onClick={addQuestionType}
-                className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-white text-xl hover:bg-slate-800 transition-colors shadow-md"
-              >
-                +
-              </button>
+              <div className="flex items-center gap-3 mt-6">
+                <div className="w-10 h-10 rounded-full bg-[#111827] flex items-center justify-center text-white text-xl hover:bg-slate-800 transition-colors cursor-pointer" onClick={addQuestionType}>
+                  +
+                </div>
+                <span className="text-sm font-medium text-[#111827]">Add Question Type</span>
+              </div>
 
               {/* TOTAL SECTION */}
-              <div className="bg-white rounded-2xl p-2 border border-slate-100 shadow-sm text-right space-y-3" style={{ backgroundColor: '#f4f4f4' }}>
-                <p className="text-sm text-slate-600">
-                  Total Questions : <span className="font-semibold text-slate-900">{getTotalQuestions()}</span>
+              <div className="bg-white rounded-[20px] p-5 shadow-[0px_2px_8px_rgba(0,0,0,0.05)] space-y-3 mt-6">
+                <p className="text-sm text-[#6B7280]">
+                  Total Questions : <span className="font-semibold text-[#111827] text-left block">{getTotalQuestions()}</span>
                 </p>
-                <p className="text-sm text-slate-600">
-                  Total Marks : <span className="font-semibold text-slate-900">{getTotalMarks()}</span>
+                <p className="text-sm text-[#6B7280]">
+                  Total Marks : <span className="font-semibold text-[#111827] text-left block">{getTotalMarks()}</span>
                 </p>
               </div>
             </div>
@@ -431,8 +434,8 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                   <select
                     value={question.type}
                     onChange={(e) => updateQuestion(index, 'type', e.target.value)}
-                    className="h-10 px-4 rounded-full text-sm border-none focus:outline-none focus:ring-2 transition-all cursor-pointer appearance-none"
-                    style={{ backgroundColor: '#FFFFFF', color: '#1F2937', border: '1px solid #E5E7EB' }}
+                    className="h-12 px-1 rounded-[16px] text-sm border-none focus:outline-none focus:ring-0 transition-all cursor-pointer font-medium"
+                    style={{ backgroundColor: '#ffffff', color: '#111827' }}
                   >
                     <option value="">Select Type</option>
                     <option value="Multiple Choice Questions">Multiple Choice Questions</option>
@@ -450,19 +453,19 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                   </button>
 
                   <div className="flex justify-center">
-                    <div className="w-[120px] flex items-center justify-between px-3 py-1.5 rounded-full text-sm" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+                    <div className="flex items-center justify-between px-4 py-2 rounded-full text-sm" style={{ backgroundColor: '#F3F4F6' }}>
                       <button
                         type="button"
                         onClick={() => decrementQuestion(index, 'count')}
-                        className="text-slate-500 hover:text-slate-700 transition-colors bg-transparent border-none cursor-pointer"
+                        className="text-[#111827] hover:text-opacity-70 transition-colors bg-transparent border-none cursor-pointer text-lg font-semibold"
                       >
                         −
                       </button>
-                      <span className="font-medium text-slate-900">{question.count}</span>
+                      <span className="font-semibold text-[#111827] mx-4">{question.count}</span>
                       <button
                         type="button"
                         onClick={() => incrementQuestion(index, 'count')}
-                        className="text-slate-500 hover:text-slate-700 transition-colors bg-transparent border-none cursor-pointer"
+                        className="text-[#111827] hover:text-opacity-70 transition-colors bg-transparent border-none cursor-pointer text-lg font-semibold"
                       >
                         +
                       </button>
@@ -470,19 +473,19 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                   </div>
 
                   <div className="flex justify-center">
-                    <div className="w-[110px] flex items-center justify-between px-3 py-1.5 rounded-full text-sm" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+                    <div className="flex items-center justify-between px-4 py-2 rounded-full text-sm" style={{ backgroundColor: '#F3F4F6' }}>
                       <button
                         type="button"
                         onClick={() => decrementQuestion(index, 'marks')}
-                        className="text-slate-500 hover:text-slate-700 transition-colors bg-transparent border-none cursor-pointer"
+                        className="text-[#111827] hover:text-opacity-70 transition-colors bg-transparent border-none cursor-pointer text-lg font-semibold"
                       >
                         −
                       </button>
-                      <span className="font-medium text-slate-900">{question.marks}</span>
+                      <span className="font-semibold text-[#111827] mx-4">{question.marks}</span>
                       <button
                         type="button"
                         onClick={() => incrementQuestion(index, 'marks')}
-                        className="text-slate-500 hover:text-slate-700 transition-colors bg-transparent border-none cursor-pointer"
+                        className="text-[#111827] hover:text-opacity-70 transition-colors bg-transparent border-none cursor-pointer text-lg font-semibold"
                       >
                         +
                       </button>
@@ -492,8 +495,8 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
               ))}
 
               {/* ADD BUTTON */}
-              <div className="flex items-center gap-2 mt-3">
-                <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white text-lg cursor-pointer hover:bg-slate-800 transition-colors" onClick={addQuestionType}>
+              <div className="flex items-center gap-3 mt-5">
+                <div className="w-10 h-10 rounded-full bg-[#111827] flex items-center justify-center text-white text-lg cursor-pointer hover:bg-slate-800 transition-colors" onClick={addQuestionType}>
                   +
                 </div>
                 <p className="text-sm font-medium text-slate-800">Add Question Type</p>

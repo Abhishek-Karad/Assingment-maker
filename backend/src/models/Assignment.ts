@@ -29,6 +29,7 @@ interface IAssignment extends Document {
   questionGenerationStatus?: 'pending' | 'processing' | 'completed' | 'failed';
   questionGenerationError?: string;
   questionGenerationCompletedAt?: Date;
+  questionGenerationFailedAt?: Date;
   jobId?: string;
   pdfFilePath?: string;
   schoolName?: string;
@@ -113,6 +114,10 @@ const assignmentSchema = new Schema<IAssignment>(
       default: null
     },
     questionGenerationCompletedAt: {
+      type: Date,
+      default: null
+    },
+    questionGenerationFailedAt: {
       type: Date,
       default: null
     },

@@ -2,7 +2,10 @@ import { Assignment } from '../models/Assignment';
 import { processFile, validateFile } from '../services/fileProcessingService';
 import { generateQuestions, validateQuestions, GeneratedQuestion } from '../services/geminiService';
 import { generateQuestionPDF } from '../services/pdfGeneratorService';
+import { generateAndUploadPDFToS3 } from '../services/s3PdfGeneratorService';
 import * as path from 'path';
+
+const isS3Enabled = (): boolean => process.env.USE_S3 === 'true';
 
 interface QuestionGenerationJobData {
   assignmentId: string;
@@ -85,7 +88,7 @@ export const processQuestionGenerationJob = async (
       console.log(`Processing file: ${jobData.filePath}`);
       
       try {
-        validateFile(jobData.filePath);
+        await validateFile(jobData.filePath);
         const processedFile = await processFile(jobData.filePath);
         fileContent = processedFile.text;
         console.log(`File processed successfully. Original content length: ${fileContent.length}`);
@@ -151,32 +154,35 @@ export const processQuestionGenerationJob = async (
 
     console.log(`Successfully generated and validated ${questions.length} questions`);
 
-    // Generate PDF from questions
     console.log(`Generating PDF for assignment ${jobData.assignmentId}`);
-    const uploadsDir = path.join(__dirname, '../../uploads');
-    const fileName = `questions_${jobData.assignmentId}_${Date.now()}.pdf`;
-    const pdfFilePath = path.join(uploadsDir, fileName);
+
+    let pdfUrl: string;
 
     try {
       // Fetch assignment to get additional details
       const assignment = await Assignment.findById(jobData.assignmentId);
+      const useS3 = isS3Enabled();
 
-      await generateQuestionPDF({
+      // Only upload to S3 - NO LOCAL FALLBACK
+      if (!useS3) {
+        throw new Error('S3 upload is required but USE_S3 is not enabled. Set USE_S3=true in .env');
+      }
+
+      // Generate PDF and upload to S3 ONLY
+      pdfUrl = await generateAndUploadPDFToS3({
         assignmentName: jobData.topic,
         dueDate: new Date().toISOString().split('T')[0],
         questions,
         subject: jobData.subject || 'General',
         topic: jobData.topic,
-        outputPath: pdfFilePath,
         schoolName: assignment?.schoolName || 'Your School Name',
         location: assignment?.location || 'School Location',
         class: jobData.subject || 'Class',
         timeAllowed: '45 minutes'
       });
-
-      console.log(`PDF generated successfully at ${pdfFilePath}`);
+      console.log(`✅ PDF uploaded to S3: ${pdfUrl}`);
     } catch (pdfError) {
-      console.error('Error generating PDF:', pdfError);
+      console.error('❌ Error generating PDF:', pdfError);
       throw new Error(
         `PDF generation failed: ${pdfError instanceof Error ? pdfError.message : 'Unknown error'}`
       );
@@ -190,7 +196,7 @@ export const processQuestionGenerationJob = async (
         questionGenerationStatus: 'completed',
         questionGenerationError: null,
         questionGenerationCompletedAt: new Date(),
-        pdfFilePath: `/uploads/${fileName}`
+        pdfFilePath: pdfUrl
       },
       { new: true }
     );
@@ -201,7 +207,7 @@ export const processQuestionGenerationJob = async (
       success: true,
       assignmentId: jobData.assignmentId,
       questionsGenerated: questions.length,
-      pdfPath: `/uploads/${fileName}`,
+      pdfPath: pdfUrl,
       assignment: updatedAssignment
     };
   } catch (error) {

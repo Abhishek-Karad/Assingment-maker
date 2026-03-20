@@ -3,6 +3,7 @@ import path from 'path';
 // @ts-ignore
 import pdfParse from 'pdf-parse';
 import sharp from 'sharp';
+import s3 from '../config/s3';
 
 interface FileContent {
   text: string;
@@ -10,13 +11,89 @@ interface FileContent {
   fileName: string;
 }
 
+const isRemoteUrl = (filePath: string): boolean => /^https?:\/\//i.test(filePath);
+
+const extractS3KeyFromUrl = (fileUrl: string): string | null => {
+  try {
+    const parsedUrl = new URL(fileUrl);
+
+    if (!parsedUrl.hostname.includes('amazonaws.com')) {
+      return null;
+    }
+
+    return decodeURIComponent(parsedUrl.pathname.replace(/^\//, ''));
+  } catch {
+    return null;
+  }
+};
+
+const readFileToBuffer = async (filePath: string): Promise<Buffer> => {
+  if (!isRemoteUrl(filePath)) {
+    return fs.promises.readFile(filePath);
+  }
+
+  const s3Key = extractS3KeyFromUrl(filePath);
+
+  // Prefer S3 SDK for private buckets and signed access through AWS credentials.
+  if (s3Key) {
+    try {
+      const headResult = await s3
+        .headObject({
+          Bucket: process.env.AWS_S3_BUCKET_NAME || 'assignment-creator',
+          Key: s3Key
+        })
+        .promise();
+
+      if (typeof headResult.ContentLength === 'number' && headResult.ContentLength <= 0) {
+        throw new Error(`Empty S3 object: ${filePath}`);
+      }
+
+      const s3Object = await s3
+        .getObject({
+          Bucket: process.env.AWS_S3_BUCKET_NAME || 'assignment-creator',
+          Key: s3Key
+        })
+        .promise();
+
+      const body = s3Object.Body;
+      if (!body) {
+        throw new Error(`Empty file content: ${filePath}`);
+      }
+
+      if (Buffer.isBuffer(body)) {
+        return body;
+      }
+
+      if (typeof body === 'string') {
+        return Buffer.from(body);
+      }
+
+      if (body instanceof Uint8Array) {
+        return Buffer.from(body);
+      }
+
+      throw new Error(`Unsupported S3 body type for: ${filePath}`);
+    } catch (s3Error) {
+      console.warn(`S3 SDK read failed, falling back to HTTP fetch for ${filePath}:`, s3Error);
+    }
+  }
+
+  const response = await fetch(filePath);
+  if (!response.ok) {
+    throw new Error(`Failed to download file (${response.status}): ${filePath}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+};
+
 /**
  * Extract text from PDF files
  */
 export const extractPdfContent = async (filePath: string): Promise<string> => {
   try {
     // Read file as buffer (pdf-parse requires buffer, not stream)
-    const fileBuffer = await fs.promises.readFile(filePath);
+    const fileBuffer = await readFileToBuffer(filePath);
     const data = await pdfParse(fileBuffer);
     return data.text || '';
   } catch (error) {
@@ -32,7 +109,7 @@ export const extractPdfContent = async (filePath: string): Promise<string> => {
 export const extractImageContent = async (filePath: string): Promise<string> => {
   try {
     // Read image file and convert to base64
-    const imageBuffer = fs.readFileSync(filePath);
+    const imageBuffer = await readFileToBuffer(filePath);
     const base64Image = imageBuffer.toString('base64');
     
     // Get file extension
@@ -64,7 +141,8 @@ export const extractImageContent = async (filePath: string): Promise<string> => 
  */
 export const extractTextContent = async (filePath: string): Promise<string> => {
   try {
-    const content = fs.readFileSync(filePath, 'utf-8');
+    const fileBuffer = await readFileToBuffer(filePath);
+    const content = fileBuffer.toString('utf-8');
     return content;
   } catch (error) {
     console.error('Error extracting text content:', error);
@@ -95,8 +173,8 @@ export const getFileType = (filePath: string): 'pdf' | 'image' | 'text' => {
  */
 export const processFile = async (filePath: string): Promise<FileContent> => {
   try {
-    // Verify file exists
-    if (!fs.existsSync(filePath)) {
+    // Verify local file exists, remote URLs are validated through download/head requests.
+    if (!isRemoteUrl(filePath) && !fs.existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
     }
     
@@ -140,16 +218,49 @@ export const processFile = async (filePath: string): Promise<FileContent> => {
 /**
  * Validate file size and type
  */
-export const validateFile = (filePath: string, maxSizeMB: number = 50): boolean => {
+export const validateFile = async (filePath: string, maxSizeMB: number = 50): Promise<boolean> => {
   try {
-    if (!fs.existsSync(filePath)) {
-      throw new Error(`File not found: ${filePath}`);
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+    let fileSize = 0;
+
+    if (isRemoteUrl(filePath)) {
+      const s3Key = extractS3KeyFromUrl(filePath);
+
+      if (s3Key) {
+        try {
+          const metadata = await s3
+            .headObject({
+              Bucket: process.env.AWS_S3_BUCKET_NAME || 'assignment-creator',
+              Key: s3Key
+            })
+            .promise();
+
+          fileSize = metadata.ContentLength || 0;
+        } catch (s3Error) {
+          console.warn(`S3 metadata lookup failed, falling back to HTTP HEAD for ${filePath}:`, s3Error);
+        }
+      }
+
+      if (!fileSize) {
+        const response = await fetch(filePath, { method: 'HEAD' });
+        if (!response.ok) {
+          throw new Error(`File not found: ${filePath}`);
+        }
+
+        const contentLength = response.headers.get('content-length');
+        if (contentLength) {
+          fileSize = Number(contentLength) || 0;
+        }
+      }
+    } else {
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+
+      fileSize = fs.statSync(filePath).size;
     }
     
-    const fileSize = fs.statSync(filePath).size;
-    const maxSizeBytes = maxSizeMB * 1024 * 1024;
-    
-    if (fileSize > maxSizeBytes) {
+    if (fileSize > 0 && fileSize > maxSizeBytes) {
       throw new Error(`File size exceeds ${maxSizeMB}MB limit`);
     }
     

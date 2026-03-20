@@ -37,14 +37,25 @@ export default function AssignmentViewer({ assignmentId, onClose }: AssignmentVi
 
   // Build PDF URL when PDF path is available
   useEffect(() => {
-    if (assignment?.pdfFilePath) {
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001/api';
-      const baseUrl = apiBaseUrl.replace('/api', '');
-      const fullPdfUrl = `${baseUrl}${assignment.pdfFilePath}`;
-      setPdfUrl(fullPdfUrl);
-      console.log('PDF URL set:', fullPdfUrl);
-    }
-  }, [assignment?.pdfFilePath]);
+    const fetchPdfUrl = async () => {
+      if (assignment?.pdfFilePath) {
+        try {
+          const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001/api';
+          const response = await fetch(`${apiBaseUrl}/assignments/${assignmentId}/pdf-path`);
+          const data = await response.json();
+          
+          if (data.success && data.data?.pdfPath) {
+            setPdfUrl(data.data.pdfPath);
+            console.log('PDF URL set:', data.data.pdfPath);
+          }
+        } catch (error) {
+          console.error('Error fetching PDF URL:', error);
+        }
+      }
+    };
+
+    fetchPdfUrl();
+  }, [assignment?.pdfFilePath, assignmentId]);
 
   const handleDownload = () => {
     if (assignment?.pdfFilePath) {

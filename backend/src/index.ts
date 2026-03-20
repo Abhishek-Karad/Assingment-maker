@@ -1,12 +1,14 @@
+// MUST be first - before any other imports
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
 import connectDB from './config/database';
+import { verifyS3Connection } from './config/s3';
 import assignmentRoutes from './routes/assignments';
 import { initializeQuestionQueue, closeQueue } from './queue/questionGenerationQueue';
-
-dotenv.config();
 
 const app: Express = express();
 const PORT = process.env.PORT || 5001;
@@ -16,12 +18,29 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files
-const uploadDir = process.env.UPLOAD_DIR || 'uploads';
-app.use('/uploads', express.static(uploadDir));
+// S3-ONLY: No local file serving
+console.log('📦 Using AWS S3 for all file uploads and storage');
+
+// Check S3 configuration
+const useS3 = process.env.USE_S3 === 'true';
 
 // Connect to MongoDB
 connectDB();
+
+// Initialize S3 (REQUIRED)
+if (!useS3) {
+  throw new Error(
+    '❌ CRITICAL: S3 upload is required but USE_S3 is not enabled.\n' +
+    'Please set USE_S3=true in your .env file.\n' +
+    'For production, you MUST use AWS S3 for file uploads.'
+  );
+}
+
+console.log('🚀 Initializing AWS S3...');
+verifyS3Connection().catch(error => {
+  console.error('⚠️ Warning: S3 connection failed:', error);
+  process.exit(1); // Exit if S3 is not available
+});
 
 // Initialize Bull MQ Queue
 initializeQuestionQueue();
