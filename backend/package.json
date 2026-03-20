@@ -3,14 +3,20 @@
   "version": "1.0.0",
   "description": "Backend for Veda AI - Assignment Management System",
   "main": "dist/index.js",
-  "scripts": {
-    "dev": "ts-node src/index.ts",
-    "worker": "ts-node src/workers/questionGenerationWorker.ts",
-    "dev:all": "concurrently \"npm run dev\" \"npm run worker\"",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "lint": "eslint src --ext .ts"
-  },
+ "scripts": {
+  "dev": "ts-node src/index.ts",
+  "worker": "ts-node src/workers/questionGenerationWorker.ts",
+  "dev:all": "concurrently \"npm run dev\" \"npm run worker\"",
+
+  "build": "tsc",
+
+  "start": "node dist/index.js",
+  "worker:prod": "node dist/workers/questionGenerationWorker.js",
+
+  "start:all": "concurrently \"npm run start\" \"npm run worker:prod\"",
+
+  "lint": "eslint src --ext .ts"
+},
   "keywords": [
     "assignment",
     "mongodb",
