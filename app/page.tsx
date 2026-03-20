@@ -3,11 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
-  Home,
-  Users,
   FileText,
-  Zap,
-  Book,
   Settings,
   Menu,
   X,
@@ -19,6 +15,7 @@ import {
   Square,
   PieChart,
 } from 'lucide-react';
+
 import CreateAssignment from './components/CreateAssignment';
 import AssignmentsList from './components/AssignmentsList';
 import NotificationDropdown from './components/NotificationDropdown';
@@ -41,7 +38,7 @@ interface Assignment {
 export default function HomePage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [activeNav, setActiveNav] = useState('home');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

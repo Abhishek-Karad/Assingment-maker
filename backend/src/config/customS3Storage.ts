@@ -7,11 +7,11 @@ import * as path from 'path';
  * Uploads files directly to S3 on upload
  */
 class S3Storage implements StorageEngine {
-  _handleFile(
-    req: Express.Request,
-    file: Express.Multer.File,
-    callback: (error: Error | null, info?: any) => void
-  ): void {
+ _handleFile(
+  _req: Express.Request,
+  file: Express.Multer.File,
+  callback: (error: Error | null, info?: any) => void
+): void {
     try {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const ext = path.extname(file.originalname);
