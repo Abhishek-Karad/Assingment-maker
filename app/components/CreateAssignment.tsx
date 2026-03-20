@@ -1,0 +1,470 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import { toast } from 'sonner';
+import { CloudUpload, ArrowLeft, ChevronRight, Loader } from 'lucide-react';
+import { createAssignment as submitAssignmentToBackend } from '@/app/api/assignmentService';
+
+interface Question {
+  type: string;
+  count: number;
+  marks: number;
+}
+
+interface Assignment {
+  assignmentName: string;
+  file?: File | null;
+  dueDate: string;
+  questions: Question[];
+  additionalInfo: string;
+}
+
+interface CreateAssignmentProps {
+  onClose: () => void;
+  onSubmit?: (data: Assignment) => void;
+}
+
+export default function CreateAssignment({ onClose, onSubmit }: CreateAssignmentProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [assignmentData, setAssignmentData] = useState<Assignment>({
+    assignmentName: '',
+    dueDate: '',
+    questions: [
+      { type: 'Multiple Choice Questions', count: 1, marks: 1 },
+      { type: 'Short Questions', count: 1, marks: 2 },
+      { type: 'Diagram/Graph-Based Questions', count: 1, marks: 5 },
+      { type: 'Numerical Problems', count: 1, marks: 5 },
+    ],
+    additionalInfo: '',
+    file: null,
+  });
+
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+
+  const validateFile = (file: File): boolean => {
+    // Check file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error('Invalid File Type', {
+        description: 'Only images (JPG, PNG, GIF, WebP) and PDFs are allowed.',
+      });
+      return false;
+    }
+
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error('File Too Large', {
+        description: `File size must be less than 20MB. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`,
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && validateFile(file)) {
+      setAssignmentData({ ...assignmentData, file });
+      toast.success('File Uploaded', {
+        description: `${file.name} has been selected.`,
+      });
+    }
+  };
+
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (validateFile(file)) {
+        setAssignmentData({ ...assignmentData, file });
+        toast.success('File Uploaded', {
+          description: `${file.name} has been selected.`,
+        });
+      }
+    }
+  };
+
+  const updateQuestion = (index: number, field: string, value: any) => {
+    const updatedQuestions = [...assignmentData.questions];
+    updatedQuestions[index] = { ...updatedQuestions[index], [field]: value };
+    setAssignmentData({ ...assignmentData, questions: updatedQuestions });
+  };
+
+  const removeQuestion = (index: number) => {
+    const updatedQuestions = assignmentData.questions.filter((_, i) => i !== index);
+    setAssignmentData({ ...assignmentData, questions: updatedQuestions });
+  };
+
+  const incrementQuestion = (index: number, field: 'count' | 'marks') => {
+    const updatedQuestions = [...assignmentData.questions];
+    updatedQuestions[index][field] = (updatedQuestions[index][field] || 0) + 1;
+    setAssignmentData({ ...assignmentData, questions: updatedQuestions });
+  };
+
+  const decrementQuestion = (index: number, field: 'count' | 'marks') => {
+    const updatedQuestions = [...assignmentData.questions];
+    if (updatedQuestions[index][field] > 0) {
+      updatedQuestions[index][field] = updatedQuestions[index][field] - 1;
+    }
+    setAssignmentData({ ...assignmentData, questions: updatedQuestions });
+  };
+
+  const addQuestionType = () => {
+    setAssignmentData({
+      ...assignmentData,
+      questions: [...assignmentData.questions, { type: '', count: 0, marks: 0 }],
+    });
+  };
+
+  const getTotalQuestions = () => assignmentData.questions.reduce((sum, q) => sum + q.count, 0);
+  const getTotalMarks = () => assignmentData.questions.reduce((sum, q) => sum + q.count * q.marks, 0);
+
+  const validateForm = (): boolean => {
+    if (!assignmentData.assignmentName.trim()) {
+      toast.error('Validation Error', {
+        description: 'Please enter an assignment name.',
+      });
+      return false;
+    }
+
+    if (!assignmentData.dueDate) {
+      toast.error('Validation Error', {
+        description: 'Please select a due date.',
+      });
+      return false;
+    }
+
+    if (assignmentData.questions.length === 0) {
+      toast.error('Validation Error', {
+        description: 'Please add at least one question type.',
+      });
+      return false;
+    }
+
+    const allQuestionsHaveType = assignmentData.questions.every(q => q.type);
+    if (!allQuestionsHaveType) {
+      toast.error('Validation Error', {
+        description: 'All questions must have a type selected.',
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('assignmentName', assignmentData.assignmentName);
+      formData.append('dueDate', assignmentData.dueDate);
+      formData.append('questions', JSON.stringify(assignmentData.questions));
+      formData.append('additionalInfo', assignmentData.additionalInfo);
+
+      // Add file if selected
+      if (assignmentData.file) {
+        formData.append('file', assignmentData.file);
+      }
+
+      // Submit to backend
+      const response = await submitAssignmentToBackend(formData);
+
+      if (response.success) {
+        toast.success('Assignment Created Successfully!', {
+          description: `Assignment "${assignmentData.assignmentName}" has been saved to the database.`,
+        });
+
+        // Call onSubmit callback with backend response data
+        if (onSubmit) {
+          onSubmit({
+            ...assignmentData,
+            ...response.data,
+          });
+        }
+
+        onClose();
+      } else {
+        toast.error('Failed to Create Assignment', {
+          description: response.error || 'Something went wrong. Please try again.',
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting assignment:', error);
+      toast.error('Network Error', {
+        description: 'Failed to connect to the server. Please check your connection.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full h-full overflow-y-auto p-4 md:p-8" style={{ backgroundColor: '#d4d4d4' }}>
+      {/* MAIN HEADER SECTION */}
+      <div className="hidden md:block px-8 py-1">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="w-4 h-4 bg-green-500 rounded-full shadow-sm"></span>
+          <h2 className="text-2xl font-semibold text-slate-900">
+            Create Assignment
+          </h2>
+        </div>
+        <p className="text-sm text-slate-500">
+         Set up a new assignment for your students
+        </p>
+      </div>
+      
+
+      {/* PROGRESS BAR */}
+      <div className="max-w-[1100px] mx-auto px-4 md:px-2 py-4">
+        <div className="h-1.5 rounded-full overflow-hidden shadow-sm" style={{ backgroundColor: '#e5e5e5' }}>
+          <div className="h-full w-1/3 bg-gradient-to-r from-slate-800 to-slate-600 transition-all duration-300"></div>
+        </div>
+      </div>
+
+      <div className="max-w-[1100px] mx-auto bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] overflow-hidden">
+        {/* MOBILE HEADER */}
+        <div className="md:hidden px-4 py-3 flex items-center gap-3 border-b border-slate-100">
+          <button onClick={onClose} className="text-slate-600 hover:text-slate-900">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <span className="text-sm text-slate-500">Assignment</span>
+        </div>
+
+        {/* FORM CONTENT */}
+        <div className="px-6 md:px-12 py-8 space-y-8" style={{ backgroundColor: '#f4f4f4' }}>
+          {/* ASSIGNMENT DETAILS SECTION */}
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 mb-1">Assignment Details</h2>
+            <p className="text-xs text-slate-500 mb-6">Basic information about your assignment</p>
+
+            {/* FILE UPLOAD */}
+            <div
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              className="border border-dashed rounded-xl p-10 text-center mb-6 hover:border-slate-300 transition-colors cursor-pointer"
+              style={{ borderColor: '#D1D5DB', backgroundColor: '#ffffff' }}
+              onClick={handleBrowseClick}
+            >
+              <CloudUpload className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+              <p className="text-slate-900 font-medium mb-1">Choose a file or drag & drop it here</p>
+              <p className="text-xs text-slate-500 mb-4">JPEG, PNG upto 20MB</p>
+              <button
+                type="button"
+                onClick={handleBrowseClick}
+                className="px-6 py-2 bg-slate-900 text-white rounded-full text-sm font-medium hover:bg-slate-800 transition-colors"
+              >
+                Browse Files
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileSelect}
+                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
+                className="hidden"
+              />
+            </div>
+
+            {assignmentData.file && (
+              <p className="text-sm text-slate-600 mb-6">
+                <span className="font-medium">Selected:</span> {assignmentData.file.name}
+              </p>
+            )}
+
+            {/* ASSIGNMENT TITLE */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-900 mb-2">Assignment Title</label>
+              <input
+                type="text"
+                value={assignmentData.assignmentName}
+                onChange={(e) => setAssignmentData({ ...assignmentData, assignmentName: e.target.value })}
+                placeholder="e.g. Physics Chapter 5 Quiz"
+                className="w-full px-4 py-2 border-none bg-slate-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+              />
+            </div>
+
+            {/* DUE DATE */}
+            <div>
+              <label className="block text-sm font-medium text-slate-900 mb-2">Due Date</label>
+              <input
+                type="date"
+                value={assignmentData.dueDate}
+                onChange={(e) => setAssignmentData({ ...assignmentData, dueDate: e.target.value })}
+                placeholder="Choose a date"
+                className="w-full px-4 py-2 border-none bg-slate-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+              />
+            </div>
+          </div>
+
+          {/* QUESTION TYPES SECTION */}
+          <div className="rounded-3xl p-5" style={{ backgroundColor: '#ececec' }}>
+            <h2 className="text-lg font-semibold text-slate-900 mb-6">Question Types</h2>
+
+            {/* HEADINGS */}
+            <div className="grid grid-cols-[1fr_40px_160px_140px] items-center mb-3 px-2">
+              <p className="text-sm font-medium text-slate-700">
+                Question Type
+              </p>
+
+              <div /> {/* empty for X column */}
+
+              <p className="text-sm font-medium text-slate-700 text-center">
+                No. of Questions
+              </p>
+
+              <p className="text-sm font-medium text-slate-700 text-center">
+                Marks
+              </p>
+            </div>
+
+            {/* ROWS */}
+           <div className="rounded-3xl p-5" style={{ backgroundColor: '#ececec' }}>
+              {assignmentData.questions.map((question, index) => (
+                <div key={index} className="grid grid-cols-[1fr_40px_160px_140px] items-center gap-2 py-2.5">
+                  {/* QUESTION TYPE */}
+                  <select
+                    value={question.type}
+                    onChange={(e) => updateQuestion(index, 'type', e.target.value)}
+                    className="h-10 px-4 rounded-full text-sm border-none focus:outline-none focus:ring-2 transition-all cursor-pointer appearance-none\n"
+                    style={{ backgroundColor: '#FFFFFF', color: '#1F2937', border: '1px solid #E5E7EB' }}
+                  >
+                    <option value="">Select Type</option>
+                    <option value="Multiple Choice Questions">Multiple Choice Questions</option>
+                    <option value="Short Questions">Short Questions</option>
+                    <option value="Diagram/Graph-Based Questions">Diagram/Graph-Based Questions</option>
+                    <option value="Numerical Problems">Numerical Problems</option>
+                  </select>
+
+                  {/* REMOVE */}
+                  <button
+                    type="button"
+                    onClick={() => removeQuestion(index)}
+                    className="text-slate-400 text-sm flex justify-center hover:text-red-600 transition-colors bg-transparent border-none cursor-pointer"
+                  >
+                    ×
+                  </button>
+
+                  {/* NO. OF QUESTIONS */}
+                  <div className="flex justify-center">
+                    <div className="w-[120px] flex items-center justify-between px-3 py-1.5 rounded-full text-sm" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+                      <button
+                        type="button"
+                        onClick={() => decrementQuestion(index, 'count')}
+                        className="text-slate-500 hover:text-slate-700 transition-colors bg-transparent border-none cursor-pointer"
+                      >
+                        −
+                      </button>
+                      <span className="font-medium text-slate-900">{question.count}</span>
+                      <button
+                        type="button"
+                        onClick={() => incrementQuestion(index, 'count')}
+                        className="text-slate-500 hover:text-slate-700 transition-colors bg-transparent border-none cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* MARKS */}
+                  <div className="flex justify-center">
+                    <div className="w-[110px] flex items-center justify-between px-3 py-1.5 rounded-full text-sm" style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB' }}>
+                      <button
+                        type="button"
+                        onClick={() => decrementQuestion(index, 'marks')}
+                        className="text-slate-500 hover:text-slate-700 transition-colors bg-transparent border-none cursor-pointer"
+                      >
+                        −
+                      </button>
+                      <span className="font-medium text-slate-900">{question.marks}</span>
+                      <button
+                        type="button"
+                        onClick={() => incrementQuestion(index, 'marks')}
+                        className="text-slate-500 hover:text-slate-700 transition-colors bg-transparent border-none cursor-pointer"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ADD BUTTON */}
+            <div className="flex items-center gap-2 mt-3">
+              <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center text-white text-lg cursor-pointer hover:bg-slate-800 transition-colors" onClick={addQuestionType}>
+                +
+              </div>
+              <p className="text-sm font-medium text-slate-800">
+                Add Question Type
+              </p>
+            </div>
+
+            {/* TOTAL SECTION */}
+            <div className="mt-4 text-right space-y-0.5">
+              <p className="text-sm text-slate-600">
+                Total Questions : <span className="font-semibold text-slate-900">{getTotalQuestions()}</span>
+              </p>
+              <p className="text-sm text-slate-600">
+                Total Marks : <span className="font-semibold text-slate-900">{getTotalMarks()}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* ADDITIONAL INFORMATION */}
+          <div className="rounded-2xl p-5" style={{ backgroundColor: '#f4f4f4' }}>
+            <h2 className="text-sm font-semibold text-slate-900 mb-3">Additional Information (For better output)</h2>
+            <textarea
+              value={assignmentData.additionalInfo}
+              onChange={(e) => setAssignmentData({ ...assignmentData, additionalInfo: e.target.value })}
+              placeholder="e.g. Generate a question paper for 2 hour exam duration."
+              rows={4}
+              className="w-full px-4 py-3 border border-dashed border-slate-200 bg-slate-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 resize-none"
+            />
+          </div>
+        </div>
+
+        {/* BUTTON SECTION */}
+        
+      </div>
+
+      <div className="max-w-[1200px] mx-auto px-6 md:px-12 py-6 flex justify-between items-center" style={{ backgroundColor: '#d4d4d4' }}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-6 py-2.5 rounded-full text-slate-900 font-medium hover:bg-slate-100 transition-colors"
+            style={{ backgroundColor: '#ffffff' }}
+          >
+            ← Previous
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isLoading}
+            className="px-6 py-2.5 bg-slate-900 text-white rounded-full font-medium hover:bg-slate-800 transition-colors flex items-center gap-2 disabled:opacity-50 shadow-md hover:shadow-lg"
+          >
+            {isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <>Next <ChevronRight className="w-4 h-4" /></>}
+          </button>
+        </div>
+    </div>
+  );
+}
+
