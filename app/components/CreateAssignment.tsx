@@ -311,7 +311,7 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                     <select
                       value={question.type}
                       onChange={(e) => updateQuestion(index, 'type', e.target.value)}
-                      className="w-fit h-12 px-2 rounded-[16px] text-sm border-none focus:outline-none focus:ring-0 bg-white font-medium"
+                      className="w-fit h-12 pl-2 pr-6 rounded-[16px] text-sm border-none focus:outline-none focus:ring-0 bg-white font-medium"
                     >
                       <option value="">Select Type</option>
                       <option value="Multiple Choice Questions">Multiple Choice Questions</option>
@@ -356,7 +356,7 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                       </div>
 
                       {/* Marks Stepper */}
-                      <div className="flex items-center justify-center gap-4 bg-white rounded-full px-3 py-2">
+                      <div className="flex items-center justify-center gap-4 bg-white rounded-full px-3 py-2" s>
                         <button
                           type="button"
                           onClick={() => decrementQuestion(index, 'marks')}
@@ -413,8 +413,7 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                   <select
                     value={question.type}
                     onChange={(e) => updateQuestion(index, 'type', e.target.value)}
-                    className="h-12 px-1 rounded-[16px] text-sm border-none focus:outline-none focus:ring-0 transition-all cursor-pointer font-medium"
-                    style={{ backgroundColor: '#ffffff', color: '#111827' }}
+                    className="h-12 pl-2 pr-6 rounded-[16px] text-sm border-none focus:outline-none focus:ring-0 bg-white font-medium cursor-pointer transition-all hover:shadow-sm"
                   >
                     <option value="">Select Type</option>
                     <option value="Multiple Choice Questions">Multiple Choice Questions</option>
@@ -432,7 +431,7 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                   </button>
 
                   <div className="flex justify-center">
-                    <div className="flex items-center justify-between px-4 py-2 rounded-full text-sm" style={{ backgroundColor: '#F3F4F6' }}>
+                    <div className="flex items-center justify-between px-4 py-2 rounded-full text-sm" style={{ backgroundColor: '#ffffff' }}>
                       <button
                         type="button"
                         onClick={() => decrementQuestion(index, 'count')}
@@ -452,7 +451,7 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
                   </div>
 
                   <div className="flex justify-center">
-                    <div className="flex items-center justify-between px-4 py-2 rounded-full text-sm" style={{ backgroundColor: '#F3F4F6' }}>
+                    <div className="flex items-center justify-between px-4 py-2 rounded-full text-sm" style={{ backgroundColor: '#ffffff' }}>
                       <button
                         type="button"
                         onClick={() => decrementQuestion(index, 'marks')}
