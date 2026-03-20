@@ -220,7 +220,7 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
         </div>
       </div>
 
-      <div className="max-w-[1100px] mx-auto bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] overflow-hidden">
+      <div className="max-w-[1100px] mx-auto bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] overflow-hidden relative">
         {/* MOBILE HEADER */}
         <div className="md:hidden px-4 py-3 flex items-center gap-3 border-b border-slate-100">
      
@@ -505,6 +505,9 @@ export default function CreateAssignment({ onClose, onSubmit }: CreateAssignment
             />
           </div>
         </div>
+
+        {/* BLUR FADE AT BOTTOM */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#f4f4f4] via-[#f4f4f4]/50 to-transparent pointer-events-none"></div>
 
         {/* BUTTON SECTION */}
         

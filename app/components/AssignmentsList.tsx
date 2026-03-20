@@ -292,13 +292,33 @@ const getStatusText = (status?: string) => {
         ))}
       </div>
 
+      {/* DESKTOP BLUR FADE AT BOTTOM */}
+      <div className="hidden md:block fixed bottom-0 left-[328px] right-0 h-32 bg-gradient-to-t from-white via-white/50 to-transparent pointer-events-none z-30"></div>
+
+      {/* MOBILE BLUR FADE AT BOTTOM */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#dbdbdb] via-[#dbdbdb]/50 to-transparent pointer-events-none" style={{ backgroundColor: '#dbdbdb' }}></div>
+
       {/* MOBILE FLOATING BUTTON */}
       <button
-        onClick={onCreateNew}
-        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center text-2xl text-slate-900 hover:shadow-xl transition-shadow active:scale-95 border border-slate-200"
-      >
-        +
-      </button>
+  onClick={onCreateNew}
+  className="
+    md:hidden
+    fixed
+    bottom-24 right-6
+    w-14 h-14
+    bg-white
+    rounded-full
+    flex items-center justify-center
+    text-3xl text-orange-500
+    shadow-[0_8px_20px_rgba(0,0,0,0.15)]
+    border border-orange-200
+    z-50
+    transition-all
+    active:scale-95
+  "
+>
+  +
+</button>
 
       {/* DESKTOP FLOATING BUTTON */}
       {sortedAssignments.length > 0 && (

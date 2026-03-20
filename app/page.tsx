@@ -11,9 +11,8 @@ import {
   ArrowLeft,
   LayoutGrid,
   Sparkles,
-  ImageIcon,
-  Square,
-  PieChart,
+  Users,
+  FilePlus,
 } from 'lucide-react';
 
 import CreateAssignment from './components/CreateAssignment';
@@ -99,18 +98,18 @@ export default function HomePage() {
 
   const menuItems = [
     { id: 'home', label: 'Home', icon: LayoutGrid },
-    { id: 'groups', label: 'My Groups', icon: ImageIcon },
+    { id: 'groups', label: 'My Groups', icon: Users },
     { id: 'assignments', label: 'Assignments', icon: FileText },
-    { id: 'toolkit', label: "AI Teacher's Toolkit", icon: Square },
-    { id: 'library', label: 'My Library', icon: PieChart },
+    { id: 'toolkit', label: "AI Teacher's Toolkit", icon: Sparkles },
+    { id: 'library', label: 'My Library', icon: FilePlus },
   ];
 
   const bottomNavItems = [
     { id: 'home', label: 'Home', icon: LayoutGrid },
-    { id: 'groups', label: 'My Groups', icon: ImageIcon },
+    { id: 'groups', label: 'My Groups', icon: Users },
     { id: 'assignments', label: 'Assignments', icon: FileText },
-    { id: 'library', label: 'Library', icon: PieChart },
-    { id: 'toolkit', label: 'AI Toolkit', icon: Square },
+    { id: 'library', label: 'Library', icon: FilePlus },
+    { id: 'toolkit', label: 'AI Toolkit', icon: Sparkles },
   ];
 
   const schoolInfo = {
@@ -236,6 +235,9 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* SIDEBAR BLUR FADE */}
+        <div className="hidden md:block absolute bottom-0 left-[12px] w-[280px] h-24 bg-gradient-to-t from-white via-white/50 to-transparent rounded-b-2xl pointer-events-none"></div>
       </div>
 
       {/* MAIN CONTENT */}
@@ -378,35 +380,54 @@ export default function HomePage() {
                 setShowCreateForm(true);
                 setActiveNav('assignments');
               }}
-              className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center text-2xl hover:shadow-xl transition-shadow active:scale-95"
+              className="md:hidden fixed bottom-32 right-6 w-14 h-14 bg-white rounded-full shadow-lg flex items-center justify-center text-2xl text-orange-500 hover:shadow-xl transition-shadow active:scale-95 border border-orange-200"
             >
               +
             </button>
           )}
+
+          {/* BLUR FADE AT BOTTOM */}
+          <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#dbdbdb] via-[#dbdbdb]/50 to-transparent pointer-events-none md:hidden"></div>
         </div>
 
         {/* MOBILE BOTTOM NAVIGATION */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 text-white border-t border-slate-800 mx-3 mb-3 rounded-3xl">
-          <div className="flex items-center justify-around">
-            {bottomNavItems.map((item) => {
-              const isActive = activeNav === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveNav(item.id);
-                    setShowCreateForm(false);
-                  }}
-                  className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${
-                    isActive ? 'text-white' : 'text-slate-400'
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span className="text-xs whitespace-nowrap">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
+        <div className="
+          md:hidden
+          fixed
+          bottom-6
+          left-1/2
+          -translate-x-1/2
+          w-[90%]
+          max-w-md
+          bg-black/90
+          backdrop-blur-md
+          rounded-full
+          px-6
+          py-3
+          flex
+          justify-between
+          items-center
+          shadow-[0_10px_30px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]
+          z-50
+        ">
+          {bottomNavItems.map((item) => {
+            const isActive = activeNav === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveNav(item.id);
+                  setShowCreateForm(false);
+                }}
+                className={`flex flex-col items-center gap-1 transition-colors ${
+                  isActive ? 'text-white' : 'text-gray-400'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="text-xs">{item.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
