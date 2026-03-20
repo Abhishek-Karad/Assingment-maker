@@ -7,7 +7,7 @@ import {
   Filter,
   MoreVertical,
 } from 'lucide-react';
-import AssignmentViewer from './AssignmentViewer';
+
 import AssignmentPreview from './AssignmentPreview';
 
 interface Assignment {
@@ -73,9 +73,10 @@ export default function AssignmentsList({
     }
   };
 
-  const getStatusText = (status?: string) => {
-    return status?.charAt(0).toUpperCase() + status?.slice(1);
-  };
+const getStatusText = (status?: string) => {
+  if (!status) return '';
+  return status.charAt(0).toUpperCase() + status.slice(1);
+};
 
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: '#dbdbdb' }}>
